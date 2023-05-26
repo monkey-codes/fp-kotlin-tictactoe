@@ -2,6 +2,8 @@ package codes.monkey.tictactoe
 
 import arrow.core.flatten
 import arrow.core.raise.either
+import codes.monkey.tictactoe.Move.Companion.move
+import codes.monkey.tictactoe.Move.Companion.moves
 import codes.monkey.tictactoe.Symbol.CROSS
 import codes.monkey.tictactoe.Symbol.NOUGHT
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -13,14 +15,15 @@ import io.kotest.property.exhaustive.exhaustive
 
 val winningMoves =
   listOf(
-      listOf(
-        Move(CROSS, Row(0), Col(0)),
-        Move(NOUGHT, Row(0), Col(1)),
-        Move(CROSS, Row(2), Col(0)),
-        Move(NOUGHT, Row(1), Col(1)),
-        Move(CROSS, Row(2), Col(2)),
-        Move(NOUGHT, Row(1), Col(2)),
-        Move(CROSS, Row(1), Col(0))
+      moves(
+        move(0, 0, CROSS),
+        move(0, 0, CROSS),
+        move(0, 1, NOUGHT),
+        move(2, 0, CROSS),
+        move(1, 1, NOUGHT),
+        move(2, 2, CROSS),
+        move(1, 2, NOUGHT),
+        move(1, 0, CROSS)
       )
     )
     .exhaustive()
@@ -48,9 +51,9 @@ class GameSpec :
             .fold(Game.new()) { game, move -> either { game.bind().make(move) }.flatten() }
             .shouldBeRight()
         moves.forEach {
-          val (symbol, r, c) = it
+          val (coord, symbol) = it
 
-          val value = game.cell(r, c).shouldBeRight()
+          val value = game.cell(coord).shouldBeRight()
           value shouldBe symbol
         }
       }

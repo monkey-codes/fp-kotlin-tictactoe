@@ -9,13 +9,9 @@ sealed class GameError
 
 data class InvalidSymbol(val value: String) : GameError()
 
-data class InvalidCoordinates(val row: Row, val col: Col) : GameError()
+data class InvalidCoordinates(val coord: Coord) : GameError()
 
 typealias Cell = Triple<Int, Int, Symbol>
-
-@JvmInline value class Row(val r: Int)
-
-@JvmInline value class Col(val c: Int)
 
 enum class Symbol(val value: String) {
   NOUGHT("o"),
@@ -31,16 +27,23 @@ fun String.toSymbol(): Either<InvalidSymbol, Symbol> =
     else -> InvalidSymbol(this).left()
   }
 
-typealias Move = Triple<Symbol, Row, Col>
+data class Coord(val row: Int, val col: Int)
+
+data class Move(val coord: Coord, val symbol: Symbol) {
+  companion object {
+    fun move(r: Int, c: Int, s: Symbol) = Move(Coord(r, c), s)
+    fun moves(vararg moves: Move): List<Move> = moves.toList()
+  }
+}
 
 class Game(val state: List<List<Symbol>>) {
 
   fun make(move: Move): Either<GameError, Game> {
-    val (symbol, r, c) = move
+    val (coord, symbol) = move
     return state
       .mapIndexed { ri, row ->
-        if (Row(ri) == r) {
-          row.mapIndexed { ci, cell -> if (Col(ci) == c) symbol else cell }
+        if (ri == coord.row) {
+          row.mapIndexed { ci, cell -> if (ci == coord.col) symbol else cell }
         } else row
       }
       .let { Game(it).right() }
@@ -71,9 +74,11 @@ val Game.cells: List<Cell>
   get() =
     state.mapIndexed { r, row -> row.mapIndexed { c, symbol -> Cell(r, c, symbol) } }.flatten()
 
-fun Game.cell(r: Row, c: Col): Either<InvalidCoordinates, Symbol> {
+fun Game.cell(coord: Coord): Either<InvalidCoordinates, Symbol> {
+  val (row, col) = coord
   val validRange = (0..2)
 
-  if (!validRange.contains(r.r) || !validRange.contains(c.c)) return InvalidCoordinates(r, c).left()
-  return state[r.r][c.c].right()
+  if (!validRange.contains(row) || !validRange.contains(col))
+    return InvalidCoordinates(coord).left()
+  return state[row][col].right()
 }
