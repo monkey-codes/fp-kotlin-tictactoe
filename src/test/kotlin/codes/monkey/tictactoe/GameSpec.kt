@@ -13,20 +13,21 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.exhaustive
 
-val winningMoves =
-  listOf(
-      moves(
-        move(0, 0, CROSS),
-        move(0, 0, CROSS),
-        move(0, 1, NOUGHT),
-        move(2, 0, CROSS),
-        move(1, 1, NOUGHT),
-        move(2, 2, CROSS),
-        move(1, 2, NOUGHT),
-        move(1, 0, CROSS)
-      )
-    )
-    .exhaustive()
+val winningMoves = either {
+    listOf(
+         moves(
+             move(0, 0, CROSS),
+             move(0, 0, CROSS),
+             move(0, 1, NOUGHT),
+             move(2, 0, CROSS),
+             move(1, 1, NOUGHT),
+             move(2, 2, CROSS),
+             move(1, 2, NOUGHT),
+             move(1, 0, CROSS)
+         ).bindAll()
+     ).exhaustive()
+}
+
 
 class GameSpec :
   StringSpec({
@@ -45,17 +46,18 @@ class GameSpec :
     }
 
     "should allow making moves" {
-      checkAll(winningMoves) { moves ->
-        val game =
-          moves
-            .fold(Game.new()) { game, move -> either { game.bind().make(move) }.flatten() }
-            .shouldBeRight()
-        moves.forEach {
-          val (coord, symbol) = it
+        winningMoves.map { games ->
+            checkAll(games) {moves ->
+                val game =
+                    moves
+                        .fold(Game.new()) { game, move -> either { game.bind().make(move) }.flatten() }
+                        .shouldBeRight()
+                moves.forEach {(coord, symbol) ->
+                    val value = game.cell(coord).shouldBeRight()
+                    value shouldBe symbol
+                }
+            }
+        }.shouldBeRight()
 
-          val value = game.cell(coord).shouldBeRight()
-          value shouldBe symbol
-        }
-      }
     }
   })

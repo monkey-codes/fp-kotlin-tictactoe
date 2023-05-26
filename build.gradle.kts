@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
   id(libs.plugins.detekt.pluginId)
   alias(libs.plugins.kover)
   alias(libs.plugins.spotless)
+  alias(libs.plugins.versions)
 }
 
 application {
