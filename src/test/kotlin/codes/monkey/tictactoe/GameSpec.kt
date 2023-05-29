@@ -1,33 +1,12 @@
 package codes.monkey.tictactoe
 
-import arrow.core.flatten
 import arrow.core.raise.either
-import codes.monkey.tictactoe.Move.Companion.move
-import codes.monkey.tictactoe.Move.Companion.moves
-import codes.monkey.tictactoe.Symbol.CROSS
-import codes.monkey.tictactoe.Symbol.NOUGHT
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeTypeOf
 import io.kotest.property.checkAll
-import io.kotest.property.exhaustive.exhaustive
-
-val winningMoves = either {
-    listOf(
-         moves(
-             move(0, 0, CROSS),
-             move(0, 0, CROSS),
-             move(0, 1, NOUGHT),
-             move(2, 0, CROSS),
-             move(1, 1, NOUGHT),
-             move(2, 2, CROSS),
-             move(1, 2, NOUGHT),
-             move(1, 0, CROSS)
-         ).bindAll()
-     ).exhaustive()
-}
-
 
 class GameSpec :
   StringSpec({
@@ -42,22 +21,36 @@ class GameSpec :
               .trimIndent()
           )
           .shouldBeRight()
-      game.cells shouldHaveSize 9
+      game.state shouldHaveSize 3
+      game.state[0] shouldHaveSize 3
     }
 
-    "should allow making moves" {
-        winningMoves.map { games ->
-            checkAll(games) {moves ->
-                val game =
-                    moves
-                        .fold(Game.new()) { game, move -> either { game.bind().make(move) }.flatten() }
-                        .shouldBeRight()
-                moves.forEach {(coord, symbol) ->
-                    val value = game.cell(coord).shouldBeRight()
-                    value shouldBe symbol
-                }
-            }
-        }.shouldBeRight()
-
+    "should detect won games" {
+      winningMoves
+        .map { games ->
+          checkAll(games) { moves ->
+            either {
+                val game = Game.new().bind().make(moves).bind()
+                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
+                game.shouldBeTypeOf<Won>()
+              }
+              .shouldBeRight()
+          }
+        }
+        .shouldBeRight()
+    }
+    "should detect drawn games" {
+      drawMoves
+        .map { games ->
+          checkAll(games) { moves ->
+            either {
+                val game = Game.new().bind().make(moves).bind()
+                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
+                game.shouldBeTypeOf<Draw>()
+              }
+              .shouldBeRight()
+          }
+        }
+        .shouldBeRight()
     }
   })
