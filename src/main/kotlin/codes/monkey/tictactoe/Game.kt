@@ -2,7 +2,6 @@ package codes.monkey.tictactoe
 
 import arrow.core.Either
 import arrow.core.flatten
-import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.right
@@ -10,30 +9,6 @@ import arrow.core.zip
 import codes.monkey.tictactoe.Symbol.BLANK
 import codes.monkey.tictactoe.Symbol.CROSS
 import codes.monkey.tictactoe.Symbol.NOUGHT
-
-sealed class GameError
-
-data class InvalidSymbol(val value: String) : GameError()
-
-data class GameNotInProgress(val game: Game) : GameError()
-
-data class InvalidMoveNumber(val number: String) : GameError()
-
-data class InvalidCoordinates(val row: Int, val col: Int) : GameError()
-
-enum class Symbol(val value: String) {
-  NOUGHT("o"),
-  CROSS("x"),
-  BLANK("_")
-}
-
-fun String.toSymbol(): Either<InvalidSymbol, Symbol> =
-  when (this.lowercase()) {
-    "x" -> CROSS.right()
-    "o" -> Symbol.NOUGHT.right()
-    "_" -> Symbol.BLANK.right()
-    else -> InvalidSymbol(this).left()
-  }
 
 data class Coord private constructor(val row: Int, val col: Int) {
   companion object {
@@ -48,21 +23,23 @@ data class Coord private constructor(val row: Int, val col: Int) {
 data class Move(val coord: Coord, val symbol: Symbol) {
   companion object {
     @Suppress("detekt:MemberNameEqualsClassName")
-    fun move(r: Int, c: Int, s: Symbol) = either { Move(Coord(r, c).bind(), s) }
+    fun move(r: Int, c: Int, s: Symbol): Either<InvalidCoordinates, Move> = either {
+      Move(Coord(r, c).bind(), s)
+    }
   }
 }
 
 typealias State = List<List<Symbol>>
 
-val State.rows: List<List<Symbol>>
+private val State.rows: List<List<Symbol>>
   get() = this
-val State.columns: List<List<Symbol>>
+private val State.columns: List<List<Symbol>>
   get() = this[0].zip(this[1], this[2]) { a, b, c -> listOf(a, b, c) }
-val State.diagonals: List<List<Symbol>>
+private val State.diagonals: List<List<Symbol>>
   get() =
     listOf(listOf(this[0][0], this[1][1], this[2][2]), listOf(this[0][2], this[1][1], this[2][0]))
 
-val State.winningConditions
+private val State.winningConditions
   get() = rows + columns + diagonals
 
 private val State.isWon

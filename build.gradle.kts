@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 }
 
 application {
-  mainClass by "io.github.nomisrev.MainKt"
+  mainClass by "codes.monkey.tictactoe.ProgramKt"
 }
 
 allprojects {
@@ -45,6 +45,10 @@ spotless {
     targetExclude("**/build/**")
     ktfmt().googleStyle()
   }
+}
+
+tasks.named<JavaExec>("run") {
+  standardInput = System.`in`
 }
 
 dependencies {
