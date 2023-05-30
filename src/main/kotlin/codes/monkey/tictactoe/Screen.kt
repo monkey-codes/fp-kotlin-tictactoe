@@ -32,7 +32,7 @@ object Screen {
   private fun generate(value: Game, error: GameError? = null): String {
     val margin = "   "
     val screenContent =
-      value.state.map { it.joinToString(" ") { (_, symbol) -> margin + symbol.value } } +
+      value.state.map { it.joinToString(" ") { symbol -> margin + symbol.value } } +
         (error?.javaClass?.simpleName.orEmpty()) +
         inputPrompt(value)
     return clearLines(screenContent.joinToString("\n"))
