@@ -29,38 +29,53 @@ sealed class IO<A> {
  * without any further steps*/
 data class Return<A>(val a: A) : IO<A>()
 /*We want to execute some effect to produce a result*/
-data class Suspend<A>(val resume: () -> A) : IO<A>()
+data class Suspend<A>(val resume: InterpreterContext.() -> A) : IO<A>()
 /*Lets us extend or continue a computation by using the result of the first computation
  * to produce the 2nd one*/
 data class FlatMap<A, B>(val sub: IO<A>, val f: (A) -> IO<B>) : IO<B>()
 
 object IOs {
-  fun stdout(msg: String) = Suspend { print(msg) }
+  fun stdout(msg: String) = Suspend { printMessage(msg) }
 
-  fun stdin(): IO<String> = Suspend { readLine().orEmpty() }
+  fun stdin(): IO<String> = Suspend { readLineFromInput().orEmpty() }
 
   fun gameScreen(programState: ProgramState) = Screen.io(programState)
 
   fun gameInput(programState: ProgramState): IO<ProgramState> = Input.io(programState)
 }
 
+interface InterpreterContext {
+  fun printMessage(message: Any?)
+
+  fun readLineFromInput(): String?
+}
+
+object DefaultInterpreterContext : InterpreterContext {
+  override fun printMessage(message: Any?) = print(message)
+
+  override fun readLineFromInput(): String? = readLine()
+}
+
 object Interpreter {
   // Page 306 in book
 
-  tailrec fun <A> run(io: IO<A>): A =
+  tailrec fun <A> run(
+    io: IO<A>,
+    interpreterContext: InterpreterContext = DefaultInterpreterContext
+  ): A =
     when (io) {
       is Return -> io.a
-      is Suspend -> io.resume()
+      is Suspend -> io.resume(interpreterContext)
       is FlatMap<*, *> -> {
         val x = io.sub as IO<A>
         val f = io.f as (A) -> IO<A>
         when (x) {
           is Return -> run(f(x.a))
-          is Suspend -> run(f(x.resume()))
+          is Suspend -> run(f(x.resume(interpreterContext)))
           is FlatMap<*, *> -> {
             val g = x.f as (A) -> IO<A>
             val y = x.sub as IO<A>
-            run(y.flatMap { a: A -> g(a).flatMap(f) })
+            run(y.flatMap { a: A -> g(a).flatMap(f) }, interpreterContext)
           }
         }
       }

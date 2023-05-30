@@ -110,6 +110,17 @@ sealed class Game(val state: State) {
       }
     }
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    other as Game
+    return state == other.state
+  }
+
+  override fun hashCode(): Int {
+    return state.hashCode()
+  }
 }
 
 class InProgress(state: State) : Game(state) {
