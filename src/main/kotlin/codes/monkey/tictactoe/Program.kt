@@ -2,33 +2,41 @@ package codes.monkey.tictactoe
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.right
 
-fun program(game: Either<GameError, Game>): IO<Unit> =
+fun Either<Pair<Game, GameError>, Game>.toMostRecentValidState() =
+  when (this) {
+    is Either.Left -> value.first.right()
+    else -> this
+  }
+
+fun program(game: Either<Pair<Game, GameError>, Game>): IO<Unit> =
   IO.unit(game)
-    .flatMap { eg -> IOs.stdout(generateScreen(eg)).map { eg } }
+    .flatMap { eg -> IOs.stdout(Screen.generateScreen(eg)).map { eg.toMostRecentValidState() } }
     .flatMap { eg ->
-      IOs.stdin().map {
-        val (symbol, row, col) = it.split(",")
+      IOs.stdin().map { input ->
         either {
-          val s = symbol.toSymbol().bind()
-          val r = row.toIntOrNull() ?: this.raise(InvalidSymbol(row))
-          val c = col.toIntOrNull() ?: this.raise(InvalidSymbol(col))
-          val move = Move.move(r, c, s).bind()
-          val g = eg.bind()
-          val newGame =
-            when (g) {
-              is InProgress -> g.make(move).bind()
-              else -> g
+          val currentState = eg.bind()
+          val errorToCurrentState = { error: GameError -> currentState to error }
+
+          val move = Move.parse(input).mapLeft(errorToCurrentState).bind()
+          val newState =
+            when (currentState) {
+              is InProgress -> currentState.make(move).mapLeft(errorToCurrentState).bind()
+              else -> currentState
             }
-          newGame
+          newState
         }
       }
     }
     .flatMap { eg2 -> program(eg2) }
 
 fun main() {
-  val p = program(Game.new())
-  Interpreter.run(p)
+  either {
+    val game = Game.new().bind()
+    val p = program(game.right())
+    Interpreter.run(p)
+  }
 }
 
 fun main2() {

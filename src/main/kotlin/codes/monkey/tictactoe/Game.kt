@@ -2,6 +2,7 @@ package codes.monkey.tictactoe
 
 import arrow.core.Either
 import arrow.core.flatten
+import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.right
@@ -17,14 +18,30 @@ data class Coord private constructor(val row: Int, val col: Int) {
       ensure(validRange.contains(row) && validRange.contains(col)) { InvalidCoordinates(row, col) }
       Coord(row, col)
     }
+
+    operator fun invoke(row: String, col: String): Either<InvalidCoordinates, Coord> = either {
+      val r = row.toIntOrNull() ?: this.raise(InvalidCoordinates(row, col))
+      val c = col.toIntOrNull() ?: this.raise(InvalidCoordinates(row, col))
+      invoke(r, c).bind()
+    }
   }
 }
 
 data class Move(val coord: Coord, val symbol: Symbol) {
   companion object {
+    private const val REQUIRED_ARGS_SIZE = 3
+
     @Suppress("detekt:MemberNameEqualsClassName")
     fun move(r: Int, c: Int, s: Symbol): Either<InvalidCoordinates, Move> = either {
       Move(Coord(r, c).bind(), s)
+    }
+
+    fun parse(input: String): Either<GameError, Move> = either {
+      val arguments = input.trim().split(" ")
+      ensure(arguments.size == REQUIRED_ARGS_SIZE) { raise(MoveParseFailure(input)) }
+      val (s, row, col) = arguments
+      val coord = Coord(row, col).bind()
+      Move(coord, s.toSymbol().bind())
     }
   }
 }
@@ -96,12 +113,15 @@ sealed class Game(val state: State) {
 }
 
 class InProgress(state: State) : Game(state) {
+
+  val nextPlayer = if (state.flatten().count { it != BLANK } % 2 == 0) CROSS else NOUGHT
+
   fun make(moves: List<Move>): Either<GameError, Game> =
     moves.fold(either<GameError, Game> { this@InProgress }) { eg, move ->
       either {
           when (val game = eg.bind()) {
             is InProgress -> game.make(move)
-            else -> either { raise(GameNotInProgress(eg.bind())) }
+            else -> this.raise(GameNotInProgress(eg.bind()))
           }
         }
         .flatten()
@@ -109,6 +129,7 @@ class InProgress(state: State) : Game(state) {
 
   fun make(move: Move): Either<GameError, Game> {
     val (coord, symbol) = move
+    if (symbol != nextPlayer) return NotPlayersTurn(symbol).left()
     return state
       .mapIndexed { ri, row ->
         if (ri == coord.row) {

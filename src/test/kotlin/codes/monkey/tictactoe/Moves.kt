@@ -30,13 +30,13 @@ val winningMoves: Either<GameError, Exhaustive<List<Move>>> = either {
   listOf(
       """
         x0 o1 __
-        x7 o4 o6
-        x3 __ x5
+        x6 o3 o5
+        x2 __ x4
       """.toMoveList().bind(),
       """
        x0 o1 x2
-       x7 o4 __
-       x3 x5 o6
+       x6 o3 __
+       x4 __ o5
       """.toMoveList().bind(),
       """
        x0 x2 x4

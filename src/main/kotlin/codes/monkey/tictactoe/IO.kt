@@ -42,6 +42,7 @@ object IOs {
 
 object Interpreter {
   // Page 306 in book
+
   tailrec fun <A> run(io: IO<A>): A =
     when (io) {
       is Return -> io.a
