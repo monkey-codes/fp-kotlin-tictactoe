@@ -64,7 +64,7 @@ class GameSpec :
           checkAll(games) { moves ->
             either {
                 val game = Game.new().bind().make(moves).bind()
-                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
+                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe (coord to symbol) }
                 game.shouldBeTypeOf<Won>()
               }
               .shouldBeRight()
@@ -78,7 +78,7 @@ class GameSpec :
           checkAll(games) { moves ->
             either {
                 val game = Game.new().bind().make(moves).bind()
-                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
+                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe (coord to symbol) }
                 game.shouldBeTypeOf<Draw>()
               }
               .shouldBeRight()

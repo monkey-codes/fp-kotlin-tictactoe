@@ -46,13 +46,15 @@ data class Move(val coord: Coord, val symbol: Symbol) {
   }
 }
 
-typealias State = List<List<Symbol>>
+typealias Cell = Pair<Coord, Symbol>
 
-private val State.rows: List<List<Symbol>>
+typealias State = List<List<Cell>>
+
+private val State.rows: List<List<Cell>>
   get() = this
-private val State.columns: List<List<Symbol>>
+private val State.columns: List<List<Cell>>
   get() = this[0].zip(this[1], this[2]) { a, b, c -> listOf(a, b, c) }
-private val State.diagonals: List<List<Symbol>>
+private val State.diagonals: List<List<Cell>>
   get() =
     listOf(listOf(this[0][0], this[1][1], this[2][2]), listOf(this[0][2], this[1][1], this[2][0]))
 
@@ -62,11 +64,11 @@ private val State.winningConditions
 private val State.isWon
   get() =
     winningConditions.any {
-      it.all { symbol -> symbol == CROSS } || it.all { symbol -> symbol == NOUGHT }
+      it.all { (_, symbol) -> symbol == CROSS } || it.all { (_, symbol) -> symbol == NOUGHT }
     }
 
 private val State.isDrawn
-  get() = this.all { it.none { symbol -> symbol == BLANK } }
+  get() = this.all { it.none { (_, symbol) -> symbol == BLANK } }
 
 fun State.toGame(): Game =
   when {
@@ -78,18 +80,20 @@ fun State.toGame(): Game =
 sealed class Game(val state: State) {
 
   companion object {
-    private const val CELLS_PER_ROW = 3
+    const val CELLS_PER_ROW = 3
 
     fun of(state: String): Either<GameError, Game> {
       return state
         .trim()
         .split(" ", "\n")
-        .let { /*traverse*/ l -> either { l.map { it.toSymbol().bind() } } }
-        .map { game(it.chunked(CELLS_PER_ROW)) }
-    }
-
-    fun game(state: State): Game {
-      return InProgress(state)
+        .let { /*traverse*/ l ->
+          either {
+            l.mapIndexed { i, s ->
+              Coord(i / CELLS_PER_ROW, i % CELLS_PER_ROW).bind() to s.toSymbol().bind()
+            }
+          }
+        }
+        .map { it.chunked(CELLS_PER_ROW).toGame() }
     }
 
     fun new(): Either<GameError, InProgress> = either {
@@ -125,7 +129,8 @@ sealed class Game(val state: State) {
 
 class InProgress(state: State) : Game(state) {
 
-  val nextPlayer = if (state.flatten().count { it != BLANK } % 2 == 0) CROSS else NOUGHT
+  val nextPlayer =
+    if (state.flatten().count { (_, symbol) -> symbol != BLANK } % 2 == 0) CROSS else NOUGHT
 
   fun make(moves: List<Move>): Either<GameError, Game> =
     moves.fold(either<GameError, Game> { this@InProgress }) { eg, move ->
@@ -142,11 +147,9 @@ class InProgress(state: State) : Game(state) {
     val (coord, symbol) = move
     if (symbol != nextPlayer) return NotPlayersTurn(symbol).left()
     return state
-      .mapIndexed { ri, row ->
-        if (ri == coord.row) {
-          row.mapIndexed { ci, cell -> if (ci == coord.col) symbol else cell }
-        } else row
-      }
+      .flatten()
+      .map { cell -> if (cell.first == coord) cell.copy(second = symbol) else cell }
+      .chunked(CELLS_PER_ROW)
       .toGame()
       .right()
   }
@@ -156,4 +159,4 @@ class Draw(state: State) : Game(state)
 
 class Won(state: State) : Game(state)
 
-fun Game.cell(coord: Coord): Symbol = this.state[coord.row][coord.col]
+fun Game.cell(coord: Coord): Cell = this.state[coord.row][coord.col]
