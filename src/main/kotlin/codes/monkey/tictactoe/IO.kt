@@ -38,6 +38,10 @@ object IOs {
   fun stdout(msg: String) = Suspend { print(msg) }
 
   fun stdin(): IO<String> = Suspend { readLine().orEmpty() }
+
+  fun gameScreen(programState: ProgramState) = Screen.io(programState)
+
+  fun gameInput(programState: ProgramState): IO<ProgramState> = Input.io(programState)
 }
 
 object Interpreter {

@@ -4,32 +4,12 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.right
 
-fun Either<Pair<Game, GameError>, Game>.toMostRecentValidState() =
-  when (this) {
-    is Either.Left -> value.first.right()
-    else -> this
-  }
+typealias ProgramState = Either<Pair<Game, GameError>, Game>
 
-fun program(game: Either<Pair<Game, GameError>, Game>): IO<Unit> =
-  IO.unit(game)
-    .flatMap { eg -> IOs.stdout(Screen.generateScreen(eg)).map { eg.toMostRecentValidState() } }
-    .flatMap { eg ->
-      IOs.stdin().map { input ->
-        either {
-          val currentState = eg.bind()
-          val errorToCurrentState = { error: GameError -> currentState to error }
-
-          val move = Move.parse(input).mapLeft(errorToCurrentState).bind()
-          val newState =
-            when (currentState) {
-              is InProgress -> currentState.make(move).mapLeft(errorToCurrentState).bind()
-              else -> currentState
-            }
-          newState
-        }
-      }
-    }
-    .flatMap { eg2 -> program(eg2) }
+fun program(programState: ProgramState): IO<Unit> =
+  IOs.gameScreen(programState)
+    .flatMap { currentState -> IOs.gameInput(currentState) }
+    .flatMap { currentState -> program(currentState) }
 
 fun main() {
   either {
