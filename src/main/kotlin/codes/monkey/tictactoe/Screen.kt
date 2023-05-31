@@ -42,6 +42,7 @@ object Screen {
     return error?.javaClass?.simpleName
       ?: when (game) {
         is Won -> "${game.winner.value} Won"
+        is Draw -> "Draw"
         else -> ""
       }
   }
