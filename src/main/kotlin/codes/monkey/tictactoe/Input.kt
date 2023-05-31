@@ -10,7 +10,7 @@ object Input {
   private fun handle(programState: ProgramState, input: String): ProgramState = either {
     val currentState = programState.bind()
     val errorToCurrentState = { error: GameError -> currentState to error }
-
+    if (input.isEmpty()) return Game.new().mapLeft(errorToCurrentState)
     val move = Move.parse(input).mapLeft(errorToCurrentState).bind()
     val newState =
       when (currentState) {

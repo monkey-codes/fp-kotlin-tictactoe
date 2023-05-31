@@ -30,29 +30,29 @@ fun String.toMoveList(): Either<GameError, List<Move>> =
 val winningMoves: Either<GameError, Exhaustive<List<Move>>> = either {
   listOf(
       """
-        x0 o1 __
+        x0 o1 --
         x6 o3 o5
-        x2 __ x4
+        x2 -- x4
       """.toMoveList().bind(),
       """
        x0 o1 x2
-       x6 o3 __
-       x4 __ o5
+       x6 o3 --
+       x4 -- o5
       """.toMoveList().bind(),
       """
        x0 x2 x4
-       o1 o3 __
-       __ __ __
+       o1 o3 --
+       -- -- --
       """.toMoveList().bind(),
       """
        x0 o1 o3
-       __ x2 __
-       __ __ x4
+       -- x2 --
+       -- -- x4
       """.toMoveList().bind(),
       """
        o3 o1 x0
-       __ x2 __
-       x4 __ __
+       -- x2 --
+       x4 -- --
       """.toMoveList().bind(),
     )
     .exhaustive()

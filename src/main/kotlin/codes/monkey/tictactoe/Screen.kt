@@ -49,6 +49,6 @@ object Screen {
   private fun inputPrompt(game: Game): String =
     when (game) {
       is InProgress -> "move for ${game.nextPlayer} (eg: 0 0) :"
-      else -> "q to quit or enter for a new game:"
+      else -> "Ctrl-C to quit or enter for a new game:"
     }
 }

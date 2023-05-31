@@ -9,13 +9,13 @@ import codes.monkey.tictactoe.Symbol.NOUGHT
 enum class Symbol(val value: String) {
   NOUGHT("o"),
   CROSS("x"),
-  BLANK("_")
+  BLANK("-")
 }
 
 fun String.toSymbol(): Either<InvalidSymbol, Symbol> =
   when (this.lowercase()) {
     "x" -> CROSS.right()
     "o" -> NOUGHT.right()
-    "_" -> Symbol.BLANK.right()
+    "-" -> Symbol.BLANK.right()
     else -> InvalidSymbol(this).left()
   }

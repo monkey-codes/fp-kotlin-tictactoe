@@ -8,6 +8,8 @@ data class NotPlayersTurn(val value: Symbol) : GameError()
 
 data class GameNotInProgress(val game: Game) : GameError()
 
+data class InvalidMove(val move: Move) : GameError()
+
 data class InvalidMoveNumber(val number: String) : GameError()
 
 data class InvalidCoordinates(val row: String, val col: String) : GameError() {

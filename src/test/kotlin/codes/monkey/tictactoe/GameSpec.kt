@@ -2,7 +2,9 @@ package codes.monkey.tictactoe
 
 import arrow.core.Either
 import arrow.core.raise.either
+import codes.monkey.tictactoe.Move.Companion.move
 import codes.monkey.tictactoe.Symbol.CROSS
+import codes.monkey.tictactoe.Symbol.NOUGHT
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
@@ -18,9 +20,9 @@ class GameSpec :
       val game =
         Game.of(
             """
-            _ _ _
-            _ _ _
-            _ _ _
+            - - -
+            - - -
+            - - -
         """
               .trimIndent()
           )
@@ -58,6 +60,15 @@ class GameSpec :
         checkAll(games) { moves -> either { Game.new().bind().make(moves).bind() }.shouldBeLeft() }
       }
     }
+
+    "should not allow overriding a cell" {
+      either {
+        val move = move(0, 0, CROSS).bind()
+        val game = Game.new().bind().make(listOf(move, move.copy(symbol = NOUGHT)))
+        game.shouldBeLeft().shouldBeTypeOf<InvalidMove>()
+      }
+    }
+
     "should detect won games" {
       winningMoves
         .map { games ->

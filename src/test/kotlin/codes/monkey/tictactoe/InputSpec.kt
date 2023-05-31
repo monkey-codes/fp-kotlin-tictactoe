@@ -15,16 +15,24 @@ class InputSpec :
       either {
         val game = Game.new().bind()
         val io = IOs.gameInput(game.right())
-        val result = with(TestInterpreterContext("x 0 0")) { Interpreter.run(io, this) }
+        val (result, _) = interpret(io, "x 0 0")
         result.shouldBeRight() shouldBeEqual game.make(move(0, 0, CROSS).bind()).bind()
       }
     }
 
+    "should handle new game input" {
+      either {
+        val game = Game.new().bind()
+        val io = IOs.gameInput(game.right())
+        val (result, _) = interpret(io, "")
+        result.shouldBeRight() shouldBeEqual (game)
+      }
+    }
     "should handle invalid input" {
       either {
         val game = Game.new().bind()
         val io = IOs.gameInput(game.right())
-        val result = with(TestInterpreterContext("x 9 10")) { Interpreter.run(io, this) }
+        val (result, _) = interpret(io, "x 9 10")
         result.shouldBeLeft() shouldBeEqual (game to InvalidCoordinates(9, 10))
       }
     }

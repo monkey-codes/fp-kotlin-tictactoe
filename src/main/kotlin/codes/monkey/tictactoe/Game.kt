@@ -2,10 +2,8 @@ package codes.monkey.tictactoe
 
 import arrow.core.Either
 import arrow.core.flatten
-import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import arrow.core.right
 import codes.monkey.tictactoe.Symbol.BLANK
 import codes.monkey.tictactoe.Symbol.CROSS
 import codes.monkey.tictactoe.Symbol.NOUGHT
@@ -106,9 +104,9 @@ sealed class Game(val state: State) {
         val game =
           of(
               """
-            _ _ _
-            _ _ _
-            _ _ _
+            - - -
+            - - -
+            - - -
         """
                 .trimIndent()
             )
@@ -147,17 +145,18 @@ class InProgress(state: State) : Game(state) {
         .flatten()
     }
 
-  fun make(move: Move): Either<GameError, Game> {
+  fun make(move: Move): Either<GameError, Game> = either {
     val (coord, symbol) = move
-    if (symbol != nextPlayer) return NotPlayersTurn(symbol).left()
-    return state
+    ensure(symbol == nextPlayer) { raise(NotPlayersTurn(symbol)) }
+    ensure(cell(move.coord) == BLANK) { raise(InvalidMove(move)) }
+
+    state
       .mapIndexed { ri, row ->
         if (ri == coord.row) {
           row.mapIndexed { ci, cell -> if (ci == coord.col) symbol else cell }
         } else row
       }
       .toGame()
-      .right()
   }
 }
 
