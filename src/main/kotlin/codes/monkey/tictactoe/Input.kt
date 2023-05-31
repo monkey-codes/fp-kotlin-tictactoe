@@ -11,10 +11,16 @@ object Input {
     val currentState = programState.bind()
     val errorToCurrentState = { error: GameError -> currentState to error }
     if (input.isEmpty()) return Game.new().mapLeft(errorToCurrentState)
-    val move = Move.parse(input).mapLeft(errorToCurrentState).bind()
+
     val newState =
       when (currentState) {
-        is InProgress -> currentState.make(move).mapLeft(errorToCurrentState).bind()
+        is InProgress -> {
+          val move =
+            Move.parse("${currentState.nextPlayer.value} $input")
+              .mapLeft(errorToCurrentState)
+              .bind()
+          currentState.make(move).mapLeft(errorToCurrentState).bind()
+        }
         else -> currentState
       }
     newState

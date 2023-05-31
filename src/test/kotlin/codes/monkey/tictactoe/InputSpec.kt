@@ -15,7 +15,7 @@ class InputSpec :
       either {
         val game = Game.new().bind()
         val io = IOs.gameInput(game.right())
-        val (result, _) = interpret(io, "x 0 0")
+        val (result, _) = interpret(io, "0 0")
         result.shouldBeRight() shouldBeEqual game.make(move(0, 0, CROSS).bind()).bind()
       }
     }
@@ -32,7 +32,7 @@ class InputSpec :
       either {
         val game = Game.new().bind()
         val io = IOs.gameInput(game.right())
-        val (result, _) = interpret(io, "x 9 10")
+        val (result, _) = interpret(io, "9 10")
         result.shouldBeLeft() shouldBeEqual (game to InvalidCoordinates(9, 10))
       }
     }

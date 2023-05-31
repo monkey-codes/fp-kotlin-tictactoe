@@ -137,12 +137,11 @@ class InProgress(state: State) : Game(state) {
   fun make(moves: List<Move>): Either<GameError, Game> =
     moves.fold(either<GameError, Game> { this@InProgress }) { eg, move ->
       either {
-          when (val game = eg.bind()) {
-            is InProgress -> game.make(move)
-            else -> this.raise(GameNotInProgress(eg.bind()))
-          }
+        when (val game = eg.bind()) {
+          is InProgress -> game.make(move).bind()
+          else -> this.raise(GameNotInProgress(game))
         }
-        .flatten()
+      }
     }
 
   fun make(move: Move): Either<GameError, Game> = either {
