@@ -65,7 +65,8 @@ class GameSpec :
             either {
                 val game = Game.new().bind().make(moves).bind()
                 moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
-                game.shouldBeTypeOf<Won>()
+                val won = game.shouldBeTypeOf<Won>()
+                won.winner shouldBe CROSS
               }
               .shouldBeRight()
           }

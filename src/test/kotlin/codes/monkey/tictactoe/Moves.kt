@@ -9,6 +9,7 @@ import io.kotest.property.exhaustive.exhaustive
 fun String.toMoveList(): Either<GameError, List<Move>> =
   either {
       trimIndent()
+        .trimMargin()
         .trim()
         .split("\n", " ")
         .chunked(3)

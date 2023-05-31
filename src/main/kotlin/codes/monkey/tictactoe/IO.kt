@@ -70,8 +70,8 @@ object Interpreter {
         val x = io.sub as IO<A>
         val f = io.f as (A) -> IO<A>
         when (x) {
-          is Return -> run(f(x.a))
-          is Suspend -> run(f(x.resume(interpreterContext)))
+          is Return -> run(f(x.a), interpreterContext)
+          is Suspend -> run(f(x.resume(interpreterContext)), interpreterContext)
           is FlatMap<*, *> -> {
             val g = x.f as (A) -> IO<A>
             val y = x.sub as IO<A>

@@ -33,14 +33,22 @@ object Screen {
     val margin = "   "
     val screenContent =
       value.state.map { it.joinToString(" ") { symbol -> margin + symbol.value } } +
-        (error?.javaClass?.simpleName.orEmpty()) +
+        (message(value, error)) +
         inputPrompt(value)
     return clearLines(screenContent.joinToString("\n"))
+  }
+
+  private fun message(game: Game, error: GameError? = null): String {
+    return error?.javaClass?.simpleName
+      ?: when (game) {
+        is Won -> "${game.winner.value} Won"
+        else -> ""
+      }
   }
 
   private fun inputPrompt(game: Game): String =
     when (game) {
       is InProgress -> "move for ${game.nextPlayer} (eg: 0 0) :"
-      else -> ""
+      else -> "q to quit or enter for a new game:"
     }
 }

@@ -6,13 +6,20 @@ import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.right
-import arrow.core.zip
 import codes.monkey.tictactoe.Symbol.BLANK
 import codes.monkey.tictactoe.Symbol.CROSS
 import codes.monkey.tictactoe.Symbol.NOUGHT
 
+typealias Cell = Pair<Coord, Symbol>
+
 data class Coord private constructor(val row: Int, val col: Int) {
   companion object {
+
+    val rows = (0..2).map { r -> (0..2).map { c -> Coord(r, c) } }
+    val columns = List(3) { c -> List(3) { r -> rows[r][c] } }
+    val diagonals =
+      listOf(0, 0, 1, 1, 2, 2, 0, 2, 1, 1, 2, 0).chunked(2).map { (r, c) -> Coord(r, c) }.chunked(3)
+
     operator fun invoke(row: Int, col: Int): Either<InvalidCoordinates, Coord> = either {
       val validRange = (0..2)
       ensure(validRange.contains(row) && validRange.contains(col)) { InvalidCoordinates(row, col) }
@@ -48,29 +55,35 @@ data class Move(val coord: Coord, val symbol: Symbol) {
 
 typealias State = List<List<Symbol>>
 
-private val State.rows: List<List<Symbol>>
-  get() = this
-private val State.columns: List<List<Symbol>>
-  get() = this[0].zip(this[1], this[2]) { a, b, c -> listOf(a, b, c) }
-private val State.diagonals: List<List<Symbol>>
-  get() =
-    listOf(listOf(this[0][0], this[1][1], this[2][2]), listOf(this[0][2], this[1][1], this[2][0]))
+private val State.rows: List<List<Cell>>
+  get() = Coord.rows.map { values(it) }
+private val State.columns: List<List<Cell>>
+  get() = Coord.columns.map { values(it) }
+private val State.diagonals: List<List<Cell>>
+  get() = Coord.diagonals.map { values(it) }
 
 private val State.winningConditions
   get() = rows + columns + diagonals
 
-private val State.isWon
+private val State.winningCoordinates: List<Cell>
   get() =
-    winningConditions.any {
-      it.all { symbol -> symbol == CROSS } || it.all { symbol -> symbol == NOUGHT }
-    }
+    winningConditions
+      .firstOrNull {
+        it.all { (_, symbol) -> symbol == CROSS } || it.all { (_, symbol) -> symbol == NOUGHT }
+      }
+      .orEmpty()
+private val State.isWon
+  get() = winningCoordinates.isNotEmpty()
 
 private val State.isDrawn
   get() = this.all { it.none { symbol -> symbol == BLANK } }
 
+fun State.values(coords: List<Coord>): List<Cell> =
+  coords.map { coord -> coord to this[coord.row][coord.col] }
+
 fun State.toGame(): Game =
   when {
-    isWon -> Won(this)
+    isWon -> Won(this, winningCoordinates.first().second)
     isDrawn -> Draw(this)
     else -> InProgress(this)
   }
@@ -85,11 +98,7 @@ sealed class Game(val state: State) {
         .trim()
         .split(" ", "\n")
         .let { /*traverse*/ l -> either { l.map { it.toSymbol().bind() } } }
-        .map { game(it.chunked(CELLS_PER_ROW)) }
-    }
-
-    fun game(state: State): Game {
-      return InProgress(state)
+        .map { it.chunked(CELLS_PER_ROW).toGame() }
     }
 
     fun new(): Either<GameError, InProgress> = either {
@@ -154,6 +163,6 @@ class InProgress(state: State) : Game(state) {
 
 class Draw(state: State) : Game(state)
 
-class Won(state: State) : Game(state)
+class Won(state: State, val winner: Symbol) : Game(state)
 
 fun Game.cell(coord: Coord): Symbol = this.state[coord.row][coord.col]
