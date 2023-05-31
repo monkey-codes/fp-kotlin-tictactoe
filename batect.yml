@@ -1,0 +1,30 @@
+containers:
+  build-env:
+    image: amazoncorretto:17-alpine3.14
+    volumes:
+      - local: .
+        container: /code
+      - type: cache
+        name: gradle-cache
+        container: /root/.gradle
+    working_directory: /code
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+tasks:
+  shell:
+    description: Start a shell in the development environment
+    run:
+      container: build-env
+      command: /bin/sh
+  build:
+    description: Build the application.
+    group: Build tasks
+    run:
+      container: build-env
+      command: ./gradlew spotlessApply build --no-daemon
+  run:
+    description: Run the application
+    group: Run
+    run:
+      container: build-env
+      command: ./gradlew run -q --console=plain
