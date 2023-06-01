@@ -14,7 +14,7 @@ object Screen {
     Suspend { generate(programState) }
       .flatMap { IOs.stdout(it).map { programState.toMostRecentValidState() } }
 
-  fun generate(e: Either<Pair<Game, GameError>, Game>): String {
+  private fun generate(e: Either<Pair<Game, GameError>, Game>): String {
     return when (e) {
       is Either.Left -> generate(e.value.first, e.value.second)
       is Either.Right -> generate(e.value)
@@ -22,21 +22,16 @@ object Screen {
   }
 
   @Suppress("detekt:MagicNumber")
-  private fun clearLines(s: String): String {
-    val escape = "\u001B"
-    val eraseLine = "${escape}[1A${escape}[2K\r"
-    return (1..s.lines().size).map { eraseLine }.joinToString("") + s
+  private fun generate(value: Game, error: GameError? = null): String {
+    val screenContent = gameState(value) + message(value, error) + inputPrompt(value)
+    return renderToString(screenContent)
   }
 
-  @Suppress("detekt:MagicNumber")
-  private fun generate(value: Game, error: GameError? = null): String {
-    val margin = "   "
-    val screenContent =
-      value.state.map { it.joinToString(" ") { symbol -> margin + symbol.value } } +
-        (message(value, error)) +
-        inputPrompt(value)
-    return clearLines(screenContent.joinToString("\n"))
-  }
+  private fun renderToString(screenContent: List<String>) =
+    clearLines(screenContent.joinToString("\n"))
+
+  private fun gameState(value: Game, margin: String = "   ") =
+    value.state.map { it.joinToString(" ") { symbol -> margin + symbol.value } }
 
   private fun message(game: Game, error: GameError? = null): String {
     return error?.javaClass?.simpleName
@@ -52,4 +47,11 @@ object Screen {
       is InProgress -> "move for ${game.nextPlayer} (eg: 0 0) :"
       else -> "Ctrl-C to quit or enter for a new game:"
     }
+
+  @Suppress("detekt:MagicNumber")
+  private fun clearLines(s: String): String {
+    val escape = "\u001B"
+    val eraseLine = "${escape}[1A${escape}[2K\r"
+    return (1..s.lines().size).map { eraseLine }.joinToString("") + s
+  }
 }

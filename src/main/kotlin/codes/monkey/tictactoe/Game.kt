@@ -4,11 +4,16 @@ import arrow.core.Either
 import arrow.core.flatten
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import codes.monkey.tictactoe.Coord.Companion.columns
+import codes.monkey.tictactoe.Coord.Companion.diagonals
+import codes.monkey.tictactoe.Coord.Companion.rows
 import codes.monkey.tictactoe.Symbol.BLANK
 import codes.monkey.tictactoe.Symbol.CROSS
 import codes.monkey.tictactoe.Symbol.NOUGHT
 
 typealias Cell = Pair<Coord, Symbol>
+
+fun List<Cell>.allSymbolsMatch(s: Symbol): Boolean = all { (_, symbol) -> symbol == s }
 
 data class Coord private constructor(val row: Int, val col: Int) {
   companion object {
@@ -53,50 +58,36 @@ data class Move(val coord: Coord, val symbol: Symbol) {
 
 typealias State = List<List<Symbol>>
 
-private val State.rows: List<List<Cell>>
-  get() = Coord.rows.map { values(it) }
-private val State.columns: List<List<Cell>>
-  get() = Coord.columns.map { values(it) }
-private val State.diagonals: List<List<Cell>>
-  get() = Coord.diagonals.map { values(it) }
+fun State.values(coordinates: List<Coord>): List<Cell> =
+  coordinates.map { coordinate -> coordinate to this[coordinate.row][coordinate.col] }
 
-private val State.winningConditions
-  get() = rows + columns + diagonals
-
-private val State.winningCoordinates: List<Cell>
-  get() =
-    winningConditions
-      .firstOrNull {
-        it.all { (_, symbol) -> symbol == CROSS } || it.all { (_, symbol) -> symbol == NOUGHT }
-      }
-      .orEmpty()
-private val State.isWon
-  get() = winningCoordinates.isNotEmpty()
-
-private val State.isDrawn
-  get() = this.all { it.none { symbol -> symbol == BLANK } }
-
-fun State.values(coords: List<Coord>): List<Cell> =
-  coords.map { coord -> coord to this[coord.row][coord.col] }
-
-fun State.toGame(): Game =
-  when {
-    isWon -> Won(this, winningCoordinates.first().second)
-    isDrawn -> Draw(this)
-    else -> InProgress(this)
-  }
+fun State.toGame(): Game = Game.of(this)
 
 sealed class Game(val state: State) {
 
   companion object {
     private const val CELLS_PER_ROW = 3
 
+    fun of(state: State): Game {
+      val winningCells =
+        (rows + columns + diagonals)
+          .map { coordinates -> state.values(coordinates) }
+          .firstOrNull { it.allSymbolsMatch(CROSS) || it.allSymbolsMatch(NOUGHT) }
+          .orEmpty()
+      val isDrawn by lazy { state.all { it.none { symbol -> symbol == BLANK } } }
+      return when {
+        winningCells.isNotEmpty() -> Won(state, winningCells.first().second)
+        isDrawn -> Draw(state)
+        else -> InProgress(state)
+      }
+    }
+
     fun of(state: String): Either<GameError, Game> {
       return state
         .trim()
         .split(" ", "\n")
         .let { /*traverse*/ l -> either { l.map { it.toSymbol().bind() } } }
-        .map { it.chunked(CELLS_PER_ROW).toGame() }
+        .map { of(it.chunked(CELLS_PER_ROW)) }
     }
 
     fun new(): Either<GameError, InProgress> = either {
