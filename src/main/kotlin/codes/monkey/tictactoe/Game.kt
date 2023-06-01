@@ -4,61 +4,65 @@ import arrow.core.Either
 import arrow.core.flatten
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import codes.monkey.tictactoe.Coord.Companion.columns
-import codes.monkey.tictactoe.Coord.Companion.diagonals
-import codes.monkey.tictactoe.Coord.Companion.rows
+import codes.monkey.tictactoe.Coordinates.Companion.columns
+import codes.monkey.tictactoe.Coordinates.Companion.diagonals
+import codes.monkey.tictactoe.Coordinates.Companion.rows
 import codes.monkey.tictactoe.Symbol.BLANK
 import codes.monkey.tictactoe.Symbol.CROSS
 import codes.monkey.tictactoe.Symbol.NOUGHT
 
-typealias Cell = Pair<Coord, Symbol>
+typealias Cell = Pair<Coordinates, Symbol>
 
 fun List<Cell>.allSymbolsMatch(s: Symbol): Boolean = all { (_, symbol) -> symbol == s }
 
-data class Coord private constructor(val row: Int, val col: Int) {
+data class Coordinates private constructor(val row: Int, val col: Int) {
   companion object {
 
-    val rows = (0..2).map { r -> (0..2).map { c -> Coord(r, c) } }
+    val rows = (0..2).map { r -> (0..2).map { c -> Coordinates(r, c) } }
     val columns = List(3) { c -> List(3) { r -> rows[r][c] } }
     val diagonals =
-      listOf(0, 0, 1, 1, 2, 2, 0, 2, 1, 1, 2, 0).chunked(2).map { (r, c) -> Coord(r, c) }.chunked(3)
+      listOf(0, 0, 1, 1, 2, 2, 0, 2, 1, 1, 2, 0)
+        .chunked(2)
+        .map { (r, c) -> Coordinates(r, c) }
+        .chunked(3)
 
-    operator fun invoke(row: Int, col: Int): Either<InvalidCoordinates, Coord> = either {
+    operator fun invoke(row: Int, col: Int): Either<InvalidCoordinates, Coordinates> = either {
       val validRange = (0..2)
       ensure(validRange.contains(row) && validRange.contains(col)) { InvalidCoordinates(row, col) }
-      Coord(row, col)
+      Coordinates(row, col)
     }
 
-    operator fun invoke(row: String, col: String): Either<InvalidCoordinates, Coord> = either {
-      val r = row.toIntOrNull() ?: this.raise(InvalidCoordinates(row, col))
-      val c = col.toIntOrNull() ?: this.raise(InvalidCoordinates(row, col))
-      invoke(r, c).bind()
-    }
+    operator fun invoke(row: String, col: String): Either<InvalidCoordinates, Coordinates> =
+      either {
+        val r = row.toIntOrNull() ?: this.raise(InvalidCoordinates(row, col))
+        val c = col.toIntOrNull() ?: this.raise(InvalidCoordinates(row, col))
+        invoke(r, c).bind()
+      }
   }
 }
 
-data class Move(val coord: Coord, val symbol: Symbol) {
+data class Move(val coordinates: Coordinates, val symbol: Symbol) {
   companion object {
     private const val REQUIRED_ARGS_SIZE = 3
 
     @Suppress("detekt:MemberNameEqualsClassName")
     fun move(r: Int, c: Int, s: Symbol): Either<InvalidCoordinates, Move> = either {
-      Move(Coord(r, c).bind(), s)
+      Move(Coordinates(r, c).bind(), s)
     }
 
     fun parse(input: String): Either<GameError, Move> = either {
       val arguments = input.trim().split(" ")
       ensure(arguments.size == REQUIRED_ARGS_SIZE) { raise(MoveParseFailure(input)) }
       val (s, row, col) = arguments
-      val coord = Coord(row, col).bind()
-      Move(coord, s.toSymbol().bind())
+      val coordinates = Coordinates(row, col).bind()
+      Move(coordinates, s.toSymbol().bind())
     }
   }
 }
 
 typealias State = List<List<Symbol>>
 
-fun State.values(coordinates: List<Coord>): List<Cell> =
+fun State.values(coordinates: List<Coordinates>): List<Cell> =
   coordinates.map { coordinate -> coordinate to this[coordinate.row][coordinate.col] }
 
 fun State.toGame(): Game = Game.of(this)
@@ -138,7 +142,7 @@ class InProgress(state: State) : Game(state) {
   fun make(move: Move): Either<GameError, Game> = either {
     val (coord, symbol) = move
     ensure(symbol == nextPlayer) { raise(NotPlayersTurn(symbol)) }
-    ensure(cell(move.coord) == BLANK) { raise(InvalidMove(move)) }
+    ensure(cell(move.coordinates) == BLANK) { raise(InvalidMove(move)) }
 
     state
       .mapIndexed { ri, row ->
@@ -154,4 +158,4 @@ class Draw(state: State) : Game(state)
 
 class Won(state: State, val winner: Symbol) : Game(state)
 
-fun Game.cell(coord: Coord): Symbol = this.state[coord.row][coord.col]
+fun Game.cell(coordinates: Coordinates): Symbol = this.state[coordinates.row][coordinates.col]
