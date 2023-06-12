@@ -2,7 +2,8 @@
 
 ![Tic-Tac-Toe](./images/tic-tac-toe.png)
 
-This is a functional programming implementation of the classic Tic-Tac-Toe game in Kotlin. The project aims to showcase functional programming principles and concepts using Kotlin's functional features.
+This repo is accompanying source code to [Building Tic Tac Toe in Kotlin with Functional Programming Blog Post.](https://blog.monkey.codes/building-tic-tac-toe-in-kotlin-with-functional-programming/)
+The project aims to showcase functional programming principles and concepts using Kotlin's functional features.
 
 ## Features
 
@@ -71,6 +72,83 @@ For example, to place your symbol in the top-left cell, you would enter `0` for 
 
 Enjoy playing Tic-Tac-Toe!
 
+## Design
+
+### Game state
+```mermaid
+classDiagram
+    Game <|-- Won
+    Game <|-- Draw
+    Game <|-- InProgress
+    Move --> Coordinates
+    Move --> Symbol
+    Move .. InProgress : make
+    class Game{
+        +List~List~Symbol~~ state
+    }
+    class Won{
+        +Symbol winner
+    }
+    class Draw{
+    }
+    class InProgress{
+        +Symbol nextPlayer
+        +make(move) Either~GameError|Game~
+    }
+    class Coordinates{
+      +Int row
+      +Int col
+    }
+    class Move {
+      +Coordinates coordinates
+      +Symbol symbol
+    }
+    class Symbol {
+        CROSS
+        NOUGHT
+        BLANK
+    }
+```
+### Program flow
+```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#aed7ea',
+      'primaryTextColor': '#000',
+      'primaryBorderColor': '#007db8',
+      'lineColor': '#000',
+      'secondaryColor': '#006100',
+      'tertiaryColor': '#fff',
+      'edgeLabelBackground': '#fff',
+      'textColor': '#000'
+    }
+  }
+}%%
+flowchart  LR
+    subgraph SE[Side Effect 'Descriptions']
+      
+        subgraph IOS[IO Monad]
+            Screen(Screen)
+        end
+        subgraph IOI[IO Monad]
+            Input(Input)
+        end
+        
+        Screen(Screen) --flatMap--> Input(Input)
+    end
+
+    style SE fill:#f8f8f8,stroke:#f3f3f3
+
+
+    subgraph FC[Functional\nCore]
+       Input --make move--> Game(Game)
+       Game --Either GameError or Game--> Input
+       Input --flatMap-->Screen
+    end
+    style FC fill:#f8f8f8,stroke:#f3f3f3
+```
 ## Contributing
 
 Contributions are welcome! If you have any ideas, suggestions, or improvements, please feel free to open an issue or submit a pull request.

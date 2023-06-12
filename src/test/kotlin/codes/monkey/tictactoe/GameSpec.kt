@@ -75,7 +75,7 @@ class GameSpec :
           checkAll(games) { moves ->
             either {
                 val game = Game.new().bind().make(moves).bind()
-                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
+                moves.forEach { (coordinates, symbol) -> game.cell(coordinates) shouldBe symbol }
                 val won = game.shouldBeTypeOf<Won>()
                 won.winner shouldBe CROSS
               }
@@ -84,13 +84,14 @@ class GameSpec :
         }
         .shouldBeRight()
     }
+
     "should detect drawn games" {
       drawMoves
         .map { games ->
           checkAll(games) { moves ->
             either {
                 val game = Game.new().bind().make(moves).bind()
-                moves.forEach { (coord, symbol) -> game.cell(coord) shouldBe symbol }
+                moves.forEach { (coordinates, symbol) -> game.cell(coordinates) shouldBe symbol }
                 game.shouldBeTypeOf<Draw>()
               }
               .shouldBeRight()
