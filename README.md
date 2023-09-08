@@ -2,7 +2,7 @@
 
 ![Tic-Tac-Toe](./images/tic-tac-toe.png)
 
-This repo is accompanying source code to [Building Tic Tac Toe in Kotlin with Functional Programming Blog Post.](https://blog.monkey.codes/building-tic-tac-toe-in-kotlin-with-functional-programming/)
+This repo is accompanying source code to [Building Tic Tac Toe in Kotlin with Functional Programming Blog Post.](https://johanzietsman.com/building-tic-tac-toe-in-kotlin-with-functional-programming/)
 The project aims to showcase functional programming principles and concepts using Kotlin's functional features.
 
 ## Features
